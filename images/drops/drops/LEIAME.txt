@@ -1,0 +1,6 @@
+caixa_texto_info_drop - refere-se a caixa de texto que estara em cima do drop no chão. dentro dela existirá o texto que identifica o drop.]
+dropsee - o indicador da seta do mouse se torna esta imagem quando passa por cima de um drop
+GOLD_drop - imagem que gold que estará no chão quando gold for dropado. existirão varias dessas imagens juntos, lado a lado, referenciando um 'punhado' de gold.
+HP_drop- esta imagem será o drop de HP que estará no chão. será bem menor dependendo da distancia da câmera.
+MANA_drop- esta imagem será o drop de MANA que estará no chão. será bem menor dependendo da distancia da câmera.
+STAMINA_drop- esta imagem será o drop de HP que estará no chão. será bem menor dependendo da distancia da câmera.
