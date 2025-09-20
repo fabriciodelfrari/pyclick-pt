@@ -773,14 +773,15 @@ class GameBot:
             try:
                 current_time = time.time()
                 
-                # Cliques aleatórios a cada 30-45 segundos
+                # Clique a cada 1 segundo
                 if current_time - self.last_background_click >= self.background_interval:
-                    self.simulate_right_click(count=2, delay=0.1)
+                    time.sleep(random.uniform(0.3, 0.7))
+                    self.simulate_right_click(count=1)
                     self.last_background_click = current_time
-                    self.background_interval = random.randint(30, 45)
-                    
+                    self.background_interval = 1
+
                     if self.show_action_logs:
-                        logging.info(f"Cliques em background executados. Próximo em {self.background_interval}s")
+                        logging.info(f"Clique em background executado. Próximo em {self.background_interval}s")
                 
                                 # Fluxo periódico a cada 5 minutos
                 if current_time - self.last_periodic_flow >= self.periodic_flow_interval:
