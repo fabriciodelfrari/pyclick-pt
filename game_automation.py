@@ -1303,10 +1303,7 @@ class GameBot:
                     print(f"   🔄 TESTE DE REPOSIÇÃO:")
                     if is_empty:
                         print(f"   🚨 POÇÃO DETECTADA COMO VAZIA - Simulando reposição...")
-                        print(f"   📝 Ação seria: Abrir inventário -> Encontrar {potion_type} -> Shift+"{'1' if potion_type == 'red_potion' else '2' if potion_type == 'green_potion' else '3'}")
-
-                        pyautogui.keyDown('i'); time.sleep(0.05); pyautogui.keyUp('i'); time.sleep(0.5)
-                        pyautogui.keyDown('1' if potion_type == 'red_potion' else '2' if potion_type == 'green_potion' else '3'); time.sleep(0.05); pyautogui.keyUp('1' if potion_type == 'red_potion' else '2' if potion_type == 'green_potion' else '3')
+                        print(f"   📝 Ação seria: Abrir inventário -> Encontrar {potion_type} -> Shift+" + ("1" if potion_type == 'red_potion' else "2" if potion_type == 'green_potion' else "3"))
                     else:
                         print(f"   ✅ POÇÃO OK - Nenhuma ação necessária")
                 except Exception as e:
@@ -1431,7 +1428,6 @@ class GameBot:
                         print(f"   ✅ Detecção de slot vazio: FUNCIONANDO")
                         print(f"   {'✅' if success else '❌'} Sistema de reposição: {'FUNCIONANDO' if success else 'FALHA'}")
                         return
-                
                 except Exception as e:
                     print(f"❌ Erro no teste de {potion_type}: {e}")
             
