@@ -20,6 +20,8 @@ import logging
 import random
 import os
 from PIL import Image
+import keyboard
+import global_vars
 
 # Configurar PyAutoGUI
 pyautogui.FAILSAFE = True
@@ -30,6 +32,17 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+# --- HOTKEY GLOBAL DE PARADA ---
+def on_f12_press(e):
+    """Função de callback para a tecla F12, que PAUSA ou RETOMA todos os serviços."""
+    global_vars.stop_all_services = not global_vars.stop_all_services
+    if global_vars.stop_all_services:
+        print("\n[AVISO] F12 pressionado! Sinal de PAUSA global enviado. Pausando todos os serviços...")
+        logging.warning("F12 pressionado! Sinal de PAUSA global enviado.")
+    else:
+        print("\n[AVISO] F12 pressionado! Sinal de RETOMADA global enviado. Retomando todos os serviços...")
+        logging.warning("F12 pressionado! Sinal de RETOMADA global enviado.")
 
 class GameBot:
     def __init__(self):
@@ -77,13 +90,19 @@ class GameBot:
         self.last_background_click = 0
         self.background_interval = 1
         self.last_periodic_flow = 0
-        self.periodic_flow_interval = 300  # 5 minutos
-        
+        self.periodic_flow_interval = 300  # 5 minutos para o fluxo F2->F3->F4->F1
+
+        # Controle do novo fluxo secundário
+        self.last_secondary_flow = 0
+        self.secondary_flow_interval = 600 # 10 minutos para o fluxo F2->(3s)->F1
+        self.secondary_flow_interval = 10 # 10 segundos para o fluxo F2->(3s)->F1
+
         # Atributos da varredura cega
         screen_width, screen_height = pyautogui.size()
         self.search_region = (0, 0, screen_width, screen_height)
         self.pause_scan = False
         self.scan_thread = None
+        self.scan_enabled = True # Novo: controla se a varredura de coleta está ativa
 
         # Configurações de logging opcionais
         self.debug_mode = False
@@ -696,6 +715,11 @@ class GameBot:
         Serviço em background que executa cliques aleatórios e fluxo periódico
         """
         while self.running:
+            # Pausa o serviço se a flag global estiver ativa
+            while global_vars.stop_all_services:
+                time.sleep(0.5)
+                if not self.running: return # Permite a finalização do bot mesmo pausado
+
             try:
                 current_time = time.time()
                 
@@ -711,12 +735,15 @@ class GameBot:
                 
                 if current_time - self.last_periodic_flow >= self.periodic_flow_interval:
                     if self.show_action_logs:
-                        logging.info("Iniciando novo fluxo periódico: F2 + Clique Direito -> F3 + Clique Direito -> F1...")
+                        logging.info("Iniciando novo fluxo periódico: F2 -> F3 -> F4 -> F1...")
 
                     pyautogui.keyDown('f2'); time.sleep(0.05); pyautogui.keyUp('f2'); time.sleep(0.1)
                     pyautogui.rightClick(); time.sleep(0.5)
 
                     pyautogui.keyDown('f3'); time.sleep(0.05); pyautogui.keyUp('f3'); time.sleep(0.1)
+                    pyautogui.rightClick(); time.sleep(0.5)
+
+                    pyautogui.keyDown('f4'); time.sleep(0.05); pyautogui.keyUp('f4'); time.sleep(0.1)
                     pyautogui.rightClick(); time.sleep(0.5)
 
                     pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
@@ -725,6 +752,23 @@ class GameBot:
 
                     if self.show_action_logs:
                         logging.info("Novo fluxo periódico concluído.")
+
+                # Novo fluxo secundário: F2 -> (3s) -> F1
+                if current_time - self.last_secondary_flow >= self.secondary_flow_interval:
+                    if self.show_action_logs:
+                        logging.info("Iniciando fluxo secundário: 4 -> (3s) -> F1...")
+
+                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
+                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
+                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
+                    time.sleep(3) # Aguarda 3 segundos
+                    pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
+
+                    self.last_secondary_flow = current_time
+
+                    if self.show_action_logs:
+                        logging.info("Fluxo secundário concluído.")
+
                 time.sleep(1)
                 
             except Exception as e:
@@ -737,6 +781,11 @@ class GameBot:
         pyautogui.keyDown('a')
         try:
             while self.running:
+                # Pausa a varredura se a flag global estiver ativa
+                while global_vars.stop_all_services:
+                    time.sleep(0.5)
+                    if not self.running: break
+
                 while self.pause_scan:
                     time.sleep(0.1)
                 
@@ -1316,9 +1365,9 @@ class GameBot:
     
     def test_periodic_flow(self):
         """
-        Testa a rotina de fluxo periódico F2->F3->F1.
+        Testa a rotina de fluxo periódico F2->F3->F4->F1.
         """
-        print("\n🧪 TESTE DE FLUXO PERIÓDICO F2->F3->F1")
+        print("\n🧪 TESTE DE FLUXO PERIÓDICO F2->F3->F4->F1")
         print("=" * 50)
         print("⚠️  ATENÇÃO: Este teste executará AÇÕES REAIS no jogo!")
         print("🎮 Certifique-se de estar com foco na janela do jogo.")
@@ -1337,33 +1386,72 @@ class GameBot:
 
         try:
             if self.show_action_logs:
-                logging.info("Iniciando fluxo periódico F2->F3->F1 (TESTE)...")
+                logging.info("Iniciando fluxo periódico F2->F3->F4->F1 (TESTE)...")
 
             pyautogui.keyDown('f2'); time.sleep(0.05); pyautogui.keyUp('f2'); time.sleep(0.5)
-
-            for i in range(3):
-                pyautogui.rightClick()
-                if i < 2: time.sleep(0.5)
+            pyautogui.rightClick()
 
             time.sleep(0.5)
 
             pyautogui.keyDown('f3'); time.sleep(0.05); pyautogui.keyUp('f3'); time.sleep(0.5)
+            pyautogui.rightClick()
 
-            for i in range(3):
-                pyautogui.rightClick()
-                if i < 2: time.sleep(0.5)
+            time.sleep(0.5)
+
+            pyautogui.keyDown('f4'); time.sleep(0.05); pyautogui.keyUp('f4'); time.sleep(0.5)
+            pyautogui.rightClick()
 
             time.sleep(0.5)
 
             pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
 
             if self.show_action_logs:
-                logging.info("Fluxo periódico F2->F3->F1 (TESTE) concluído com sucesso!")
+                logging.info("Fluxo periódico F2->F3->F4->F1 (TESTE) concluído com sucesso!")
             print("\n✅ Teste de fluxo periódico concluído!")
 
         except Exception as e:
             logging.error(f"Erro durante o teste de fluxo periódico: {e}")
             print("\n❌ Teste de fluxo periódico falhou!")
+
+    def test_secondary_flow(self):
+        """
+        Testa a rotina de fluxo secundário 4 -> (3s) -> F1.
+        """
+        print("\n🧪 TESTE DE FLUXO SECUNDÁRIO 4 -> (3s) -> F1")
+        print("=" * 50)
+        print("⚠️  ATENÇÃO: Este teste executará AÇÕES REAIS no jogo!")
+        print("🎮 Certifique-se de estar com foco na janela do jogo.")
+        print()
+
+        confirm = input("Deseja continuar? (s/N): ").strip().lower()
+        if confirm != 's':
+            print("Teste cancelado.")
+            return
+
+        print("\n⏰ Aguardando 5 segundos para você focar no jogo...")
+        for i in range(5, 0, -1):
+            print(f"   {i}...", end='\r')
+            time.sleep(1)
+        print("   🚀 INICIANDO TESTE!")
+
+        try:
+            if self.show_action_logs:
+                logging.info("Iniciando fluxo secundário 4 -> (3s) -> F1 (TESTE)...")
+
+            pyautogui.keyDown('4'); time.sleep(0.05); pyautogui.keyUp('4')
+            print("   - Tecla 4 pressionada. Aguardando 3 segundos...")
+            time.sleep(3)
+
+            pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
+            print("   - F1 pressionado.")
+
+            if self.show_action_logs:
+                logging.info("Fluxo secundário (TESTE) concluído com sucesso!")
+            print("\n✅ Teste de fluxo secundário concluído!")
+
+        except Exception as e:
+            logging.error(f"Erro durante o teste de fluxo secundário: {e}")
+            print("\n❌ Teste de fluxo secundário falhou!")
 
     def test_empty_slot(self):
         """Testa especificamente slots vazios com ações reais"""
@@ -1490,11 +1578,20 @@ class GameBot:
         background_thread = threading.Thread(target=self.background_service, daemon=True)
         background_thread.start()
         
-        self.scan_thread = threading.Thread(target=self._blind_scan_worker, daemon=True)
-        self.scan_thread.start()
+        if self.scan_enabled:
+            self.scan_thread = threading.Thread(target=self._blind_scan_worker, daemon=True)
+            self.scan_thread.start()
+            logging.info("Varredura de coleta INICIADA.")
+        else:
+            logging.warning("Varredura de coleta está DESATIVADA e não será iniciada.")
 
         try:
             while self.running:
+                # Pausa o monitoramento se a flag global estiver ativa
+                while global_vars.stop_all_services:
+                    time.sleep(0.5)
+                    if not self.running: break # Permite a finalização do bot mesmo pausado
+
                 frame = self.capture_screen()
                 if frame is None:
                     time.sleep(0.1)
@@ -1519,6 +1616,10 @@ def main():
     print("Desenvolvido por: Fabricio Costa")
     print("Data: 18/09/2025\n")
     
+    # Registra o hotkey F12 para parar o bot globalmente
+    keyboard.on_press_key("f12", on_f12_press)
+    logging.info("Hotkey F12 registrado para parada de emergência.")
+
     bot = GameBot()
     
     while True:
@@ -1529,12 +1630,14 @@ def main():
         print("4. Testar simulação de teclas")
         print("5. DIAGNÓSTICO COMPLETO das barras")
         print("6. DIAGNÓSTICO COMPLETO das poções")
-        print("7. TESTAR FLUXO PERIÓDICO F2->F3->F1")
-        print("8. TESTE DE SLOT VAZIO (usar poção no jogo)")
-        print("9. Configurar logs")
-        print("10. Sair")
+        print("7. TESTAR FLUXO PERIÓDICO F2->F3->F4->F1")
+        print("8. TESTAR FLUXO SECUNDÁRIO 4->(3s)->F1")
+        print("9. TESTE DE SLOT VAZIO (usar poção no jogo)")
+        print(f"10. Varredura de Coleta: {'🟢 ATIVA' if bot.scan_enabled else '🔴 INATIVA'}")
+        print("11. Configurar logs")
+        print("12. Sair")
         
-        choice = input("\nEscolha uma opção (1-10): ").strip()
+        choice = input("\nEscolha uma opção (1-12): ").strip()
 
         if choice == '1':
             bot.start()
@@ -1551,13 +1654,23 @@ def main():
         elif choice == '7':
             bot.test_periodic_flow()
         elif choice == '8':
-            bot.test_empty_slot()
+            bot.test_secondary_flow()
         elif choice == '9':
-            bot.configure_logs()
+            bot.test_empty_slot()
         elif choice == '10':
+            bot.scan_enabled = not bot.scan_enabled
+        elif choice == '11':
+            bot.configure_logs()
+        elif choice == '12':
             break
         else:
             print("\nOpção inválida! Tente novamente.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logging.info("Programa interrompido pelo usuário (Ctrl+C).")
+    finally:
+        global_vars.stop_all_services = True
+        print("\nAplicação finalizada.")
