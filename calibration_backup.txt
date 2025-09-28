@@ -1,4 +1,4 @@
 # Backup da calibração
 bar_regions = {'hp': (317, 949, 15, 95), 'mana': (464, 948, 15, 95), 'energy': (300, 1007, 15, 40)}
 potion_regions = {'red_potion': (490, 1006, 30, 30), 'green_potion': (518, 1007, 25, 30), 'blue_potion': (544, 1007, 30, 30)}
-inventory_region = (233, 878, 52, 137)
+inventory_region = (236, 882, 52, 137)

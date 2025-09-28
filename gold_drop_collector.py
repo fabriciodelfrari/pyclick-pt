@@ -481,7 +481,7 @@ def main():
                             click_y = max(search_region_y, min(click_y, search_region_y + search_region_height - 1))
                             
                             pyautogui.click(click_x, click_y)
-                            time.sleep(random.uniform(0.1, 0.3)) # Faster, less varied click delay
+                            time.sleep(random.uniform(0.5, 1)) # Faster, less varied click delay
                     
                     if cancel_scan_flag:
                         cancel_scan_flag = False

@@ -580,7 +580,7 @@ class GameBot:
                     max_corr = current_max_corr
                     best_match_loc = max_loc
 
-            match_threshold = 0.70
+            match_threshold = 0.2
 
             if max_corr >= match_threshold and best_match_loc:
                 template_h, template_w = self.potion_templates[category][0].shape[:2]
@@ -745,6 +745,9 @@ class GameBot:
 
                     pyautogui.keyDown('f4'); time.sleep(0.05); pyautogui.keyUp('f4'); time.sleep(0.1)
                     pyautogui.rightClick(); time.sleep(0.5)
+                    
+                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
+                    pyautogui.rightClick(); time.sleep(0.5)
 
                     pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
 
@@ -758,9 +761,9 @@ class GameBot:
                     if self.show_action_logs:
                         logging.info("Iniciando fluxo secundário: 4 -> (3s) -> F1...")
 
-                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
-                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
-                    pyautogui.keyDown('f5'); time.sleep(0.05); pyautogui.keyUp('f5'); time.sleep(0.1)
+                    pyautogui.keyDown('f6'); time.sleep(0.05); pyautogui.keyUp('f6'); time.sleep(0.1)
+                    pyautogui.keyDown('f6'); time.sleep(0.05); pyautogui.keyUp('f6'); time.sleep(0.1)
+                    pyautogui.keyDown('f6'); time.sleep(0.05); pyautogui.keyUp('f6'); time.sleep(0.1)
                     time.sleep(3) # Aguarda 3 segundos
                     pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
 
@@ -776,11 +779,13 @@ class GameBot:
                 time.sleep(5)
 
     def _blind_scan_worker(self):
+        returnv#1111111111111111
         """Lógica da varredura cega, executada em um thread separado."""
         logging.info("Thread de varredura cega iniciado.")
-        pyautogui.keyDown('a')
+        
         try:
             while self.running:
+                pyautogui.keyDown('a')
                 # Pausa a varredura se a flag global estiver ativa
                 while global_vars.stop_all_services:
                     time.sleep(0.5)
@@ -797,10 +802,10 @@ class GameBot:
                     
                     for x_coord in range(search_region_x, search_region_x + search_region_width, 20):
                         if not self.running: break
-                        while self.pause_scan: time.sleep(0.1)
+                        while self.pause_scan: time.sleep(random.uniform(0.5, 1))
                         
-                        pyautogui.click(x_coord, y_coord)
-                        time.sleep(random.uniform(0.1, 0.3))
+                        pyaut111ogui.click(x_coord, y_coord)
+                        time.sleep(random.uniform(0.2, 0.5))
                 
                 if not self.running: break
 
@@ -1610,67 +1615,21 @@ class GameBot:
             self.running = False
             logging.info("GameBot finalizado")
 
-def main():
-    """Função principal"""
-    print("=== Automação de Jogo - Monitor de Barras e Poções ===")
-    print("Desenvolvido por: Fabricio Costa")
-    print("Data: 18/09/2025\n")
-    
-    # Registra o hotkey F12 para parar o bot globalmente
-    keyboard.on_press_key("f12", on_f12_press)
-    logging.info("Hotkey F12 registrado para parada de emergência.")
-
-    bot = GameBot()
-    
-    while True:
-        print("\nOpções:")
-        print("1. Iniciar monitoramento")
-        print("2. Calibrar regiões (barras, poções, inventário)")
-        print("3. Calibrar zona de varredura")
-        print("4. Testar simulação de teclas")
-        print("5. DIAGNÓSTICO COMPLETO das barras")
-        print("6. DIAGNÓSTICO COMPLETO das poções")
-        print("7. TESTAR FLUXO PERIÓDICO F2->F3->F4->F1")
-        print("8. TESTAR FLUXO SECUNDÁRIO 4->(3s)->F1")
-        print("9. TESTE DE SLOT VAZIO (usar poção no jogo)")
-        print(f"10. Varredura de Coleta: {'🟢 ATIVA' if bot.scan_enabled else '🔴 INATIVA'}")
-        print("11. Configurar logs")
-        print("12. Sair")
-        
-        choice = input("\nEscolha uma opção (1-12): ").strip()
-
-        if choice == '1':
-            bot.start()
-        elif choice == '2':
-            bot.calibrate_regions()
-        elif choice == '3':
-            bot.calibrate_search_region()
-        elif choice == '4':
-            bot.test_key_simulation()
-        elif choice == '5':
-            bot.run_diagnostics()
-        elif choice == '6':
-            bot.run_potion_diagnostics()
-        elif choice == '7':
-            bot.test_periodic_flow()
-        elif choice == '8':
-            bot.test_secondary_flow()
-        elif choice == '9':
-            bot.test_empty_slot()
-        elif choice == '10':
-            bot.scan_enabled = not bot.scan_enabled
-        elif choice == '11':
-            bot.configure_logs()
-        elif choice == '12':
-            break
-        else:
-            print("\nOpção inválida! Tente novamente.")
-
 if __name__ == "__main__":
     try:
-        main()
+        # Importa e executa a GUI diretamente como ponto de entrada principal.
+        from gui import main_gui
+        main_gui()
+    except ImportError:
+        # Log de erro caso a GUI não possa ser importada.
+        logging.critical("ERRO FATAL: Não foi possível carregar a interface gráfica (gui.py).")
+        print("\n[ERRO FATAL] O arquivo 'gui.py' não foi encontrado ou contém erros.")
+        print("Certifique-se de que 'gui.py' está na mesma pasta que 'game_automation.py'.")
+        input("Pressione Enter para sair.") # Pausa para o usuário ler o erro
     except KeyboardInterrupt:
         logging.info("Programa interrompido pelo usuário (Ctrl+C).")
     finally:
+        # A lógica de finalização principal é tratada dentro da GUI (on_closing),
+        # mas manter isso aqui garante uma parada limpa se a GUI falhar ao iniciar.
         global_vars.stop_all_services = True
         print("\nAplicação finalizada.")
