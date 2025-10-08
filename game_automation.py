@@ -565,25 +565,34 @@ class GameBot:
             inv_region = self.extract_region(frame, self.inventory_region)
             if inv_region is None: return None
 
+            # Variáveis para armazenar o melhor resultado encontrado
             best_match_loc = None
+            best_template = None
             max_corr = -1
 
             for template in self.potion_templates[category]:
                 if template.shape[0] > inv_region.shape[0] or template.shape[1] > inv_region.shape[1]:
-                    logging.warning(f"Template {category} é maior que a região do inventário. Pulando.")
+                    # Este log pode ser muito verboso, então foi comentado.
+                    # logging.warning(f"Template para {category} é maior que a região do inventário. Pulando.")
                     continue
 
                 result = cv2.matchTemplate(inv_region, template, cv2.TM_CCOEFF_NORMED)
                 min_val, current_max_corr, min_loc, max_loc = cv2.minMaxLoc(result)
 
-                if current_max_corr > max_corr:
+                # Se a correlação deste template for a melhor até agora, armazena seus detalhes
+                if current_max_corr >= max_corr:
                     max_corr = current_max_corr
                     best_match_loc = max_loc
+                    best_template = template
+                    
+                
+                logging.info(f"best_match_loc: {best_match_loc}, max_corr: {max_corr}, template_shape: {template.shape}")
 
-            match_threshold = 0.2
+            match_threshold = 0.59# Aumentado para maior precisão e evitar falsos positivos
 
-            if max_corr >= match_threshold and best_match_loc:
-                template_h, template_w = self.potion_templates[category][0].shape[:2]
+            if max_corr >= match_threshold and best_match_loc is not None and best_template is not None:
+                # Usa as dimensões do template que realmente correspondeu
+                template_h, template_w = best_template.shape[:2]
                 top_left_x, top_left_y = best_match_loc
                 center_x_in_inv = top_left_x + template_w // 2
                 center_y_in_inv = top_left_y + template_h // 2
@@ -764,8 +773,11 @@ class GameBot:
                     pyautogui.keyDown('f6'); time.sleep(0.05); pyautogui.keyUp('f6'); time.sleep(0.1)
                     pyautogui.keyDown('f6'); time.sleep(0.05); pyautogui.keyUp('f6'); time.sleep(0.1)
                     pyautogui.keyDown('f6'); time.sleep(0.05); pyautogui.keyUp('f6'); time.sleep(0.1)
-                    time.sleep(3) # Aguarda 3 segundos
+                    time.sleep(1.5) # Aguarda 3 segundos
                     pyautogui.keyDown('f1'); time.sleep(0.05); pyautogui.keyUp('f1')
+                    
+                    pyautogui.rightClick()
+                    pyautogui.rightClick()
 
                     self.last_secondary_flow = current_time
 
@@ -779,8 +791,9 @@ class GameBot:
                 time.sleep(5)
 
     def _blind_scan_worker(self):
-        returnv#1111111111111111
+        return
         """Lógica da varredura cega, executada em um thread separado."""
+        time.sleep(60);
         logging.info("Thread de varredura cega iniciado.")
         
         try:
@@ -804,8 +817,13 @@ class GameBot:
                         if not self.running: break
                         while self.pause_scan: time.sleep(random.uniform(0.5, 1))
                         
-                        pyaut111ogui.click(x_coord, y_coord)
-                        time.sleep(random.uniform(0.2, 0.5))
+                        # O clique é feito sem "hold" para garantir que seja uma ação de coleta.
+                        pyautogui.moveTo(x_coord, y_coord, duration=random.uniform(0.05, 0.1))
+                        pyautogui.mouseDown()
+                        pyautogui.mouseUp()
+                        
+                        # Aumenta a pausa mínima entre os cliques para evitar o registro de clique duplo (correr).
+                        time.sleep(random.uniform(0.4, 0.6))
                 
                 if not self.running: break
 
@@ -1283,6 +1301,7 @@ class GameBot:
         """Executa diagnóstico completo das poções"""
         print("\n🧪 DIAGNÓSTICO COMPLETO DAS POÇÕES")
         print("=" * 50)
+        print("CapturanitPL104do e analisando poções em tempo real por 10 segundos...")
         print("Capturando e analisando poções em tempo real por 10 segundos...")
         
         start_time = time.time()
@@ -1377,13 +1396,6 @@ class GameBot:
         print("⚠️  ATENÇÃO: Este teste executará AÇÕES REAIS no jogo!")
         print("🎮 Certifique-se de estar com foco na janela do jogo.")
         print()
-
-        confirm = input("Deseja continuar? (s/N): ").strip().lower()
-        if confirm != 's':
-            print("Teste cancelado.")
-            return
-
-        print("\n⏰ Aguardando 5 segundos para você focar no jogo...")
         for i in range(5, 0, -1):
             print(f"   {i}...", end='\r')
             time.sleep(1)
@@ -1427,13 +1439,6 @@ class GameBot:
         print("⚠️  ATENÇÃO: Este teste executará AÇÕES REAIS no jogo!")
         print("🎮 Certifique-se de estar com foco na janela do jogo.")
         print()
-
-        confirm = input("Deseja continuar? (s/N): ").strip().lower()
-        if confirm != 's':
-            print("Teste cancelado.")
-            return
-
-        print("\n⏰ Aguardando 5 segundos para você focar no jogo...")
         for i in range(5, 0, -1):
             print(f"   {i}...", end='\r')
             time.sleep(1)
@@ -1468,13 +1473,6 @@ class GameBot:
         print("   2. Estar com foco na janela do jogo")
         print("   3. Ter poções no inventário para reposição")
         print()
-        
-        confirm = input("Deseja continuar? (s/N): ").strip().lower()
-        if confirm != 's':
-            print("Teste cancelado.")
-            return
-        
-        print("\n⏰ Aguardando 10 segundos para você focar no jogo...")
         for i in range(10, 0, -1):
             print(f"   {i}...", end='\r')
             time.sleep(1)

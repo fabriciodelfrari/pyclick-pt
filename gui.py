@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, scrolledtext
+from tkinter import ttk, scrolledtext, messagebox
 import threading
 import queue
 import logging
@@ -64,10 +64,10 @@ class BotGUI:
 
         ttk.Button(test_frame, text="Testar Simulação de Teclas", command=self.bot.test_key_simulation).pack(fill=tk.X, pady=2)
         ttk.Button(test_frame, text="Diagnóstico de Barras", command=self.bot.run_diagnostics).pack(fill=tk.X, pady=2)
-        ttk.Button(test_frame, text="Diagnóstico de Poções", command=self.bot.run_potion_diagnostics).pack(fill=tk.X, pady=2)
-        ttk.Button(test_frame, text="Testar Fluxo Periódico (F2->F3...)", command=self.bot.test_periodic_flow).pack(fill=tk.X, pady=2)
-        ttk.Button(test_frame, text="Testar Fluxo Secundário (F5->F1)", command=self.bot.test_secondary_flow).pack(fill=tk.X, pady=2)
-        ttk.Button(test_frame, text="Testar Detecção de Slot Vazio", command=self.bot.test_empty_slot).pack(fill=tk.X, pady=2)
+        ttk.Button(test_frame, text="Diagnóstico de Poções", command=lambda: self._run_test_with_confirmation(self.bot.run_potion_diagnostics, "Diagnóstico de Poções")).pack(fill=tk.X, pady=2)
+        ttk.Button(test_frame, text="Testar Fluxo Periódico (F2->F3...)", command=lambda: self._run_test_with_confirmation(self.bot.test_periodic_flow, "Teste de Fluxo Periódico")).pack(fill=tk.X, pady=2)
+        ttk.Button(test_frame, text="Testar Fluxo Secundário (F5->F1)", command=lambda: self._run_test_with_confirmation(self.bot.test_secondary_flow, "Teste de Fluxo Secundário")).pack(fill=tk.X, pady=2)
+        ttk.Button(test_frame, text="Testar Detecção de Slot Vazio", command=lambda: self._run_test_with_confirmation(self.bot.test_empty_slot, "Teste de Slot Vazio")).pack(fill=tk.X, pady=2)
 
         # --- Seção de Configurações ---
         settings_frame = ttk.LabelFrame(main_frame, text="Configurações", padding="10")
@@ -164,6 +164,23 @@ class BotGUI:
         self.bot.show_potion_logs = self.log_vars["Logs de Poções"].get()
         self.bot.show_action_logs = self.log_vars["Logs de Ações"].get()
         logging.info("Configurações de log atualizadas pela GUI.")
+
+    def _run_test_with_confirmation(self, test_function, test_name):
+        """Exibe uma caixa de diálogo de confirmação antes de executar um teste."""
+        title = "Confirmação de Teste"
+        message = (
+            f"Você está prestes a executar o '{test_name}'.\n\n"
+            "Este teste executará AÇÕES REAIS no jogo (simulação de teclas e cliques).\n\n"
+            "Certifique-se de que a janela do jogo está em foco antes de continuar.\n\n"
+            "Deseja continuar?"
+        )
+        
+        if messagebox.askyesno(title, message):
+            logging.info(f"Iniciando '{test_name}' após confirmação do usuário.")
+            # Executa o teste em uma nova thread para não bloquear a GUI
+            threading.Thread(target=test_function, daemon=True).start()
+        else:
+            logging.info(f"'{test_name}' cancelado pelo usuário.")
 
     def poll_log_queue(self):
         """Verifica a fila de logs e atualiza a área de texto."""
